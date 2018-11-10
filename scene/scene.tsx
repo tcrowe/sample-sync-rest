@@ -18,7 +18,7 @@ const wallPixelZ = 5;
 const wallPixelScale: Vector3Component = {
   x: wallWidth / wallBlocksX - 0.01,
   y: wallHeight / wallBlocksY - 0.01,
-  z: 0.05,
+  z: 0.05
 };
 
 const palettePixelPrefix = "palette-pixel-";
@@ -26,6 +26,16 @@ const paletteScale = { x: 0.16, y: 0.16, z: 0 };
 const palettePositionX = 0.05;
 const pound = "#";
 
+/*
+
+Color list
+
+Source:
+https://www.patternfly.org/styles/color-palette/
+
++ some are commented to get the entity count down
+
+*/
 const paletteColorList = [
   "#fbdebf",
   "#f7bd7f",
@@ -101,11 +111,11 @@ const paletteColorList = [
   "#470000",
   "#2c0000",
   null
-]
+];
 
 const paletteColorListNoPound = paletteColorList.map(function(color) {
   if (color === null) {
-    return null
+    return null;
   }
 
   return color.replace(pound, "");
@@ -115,7 +125,7 @@ const paletteColorTransition = {
   position: {
     duration: 300
   }
-}
+};
 
 const blankColor = "#0099CC";
 
@@ -131,7 +141,12 @@ const wallPixelBlankMaterial = (
   />
 );
 
-const transparentMaterial = <basic-material id="transparent-material" texture="./textures/transparent-texture.png" />;
+const transparentMaterial = (
+  <basic-material
+    id="transparent-material"
+    texture="./textures/transparent-texture.png"
+  />
+);
 
 const apiUrl = "http://127.0.0.1:7753/api/pixels";
 
@@ -160,7 +175,6 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     wallBlockColors: wallPixelColorsInit
   };
 
-
   private wallPixelClick(evt: any): void {
     console.log("wallPixelClick", evt);
     /*const { paletteColor, wallBlockColors } = this.state;
@@ -182,23 +196,26 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     this.setState({ paletteColor });*/
   }
 
-
   private drawPalette(): DCL.ISimplifiedNode[] {
     const scene = this;
-    console.log("scene", scene)
+    console.log("scene", scene);
     const { paletteColor } = scene.state;
     const palettePosition = { x: 0, y: 0, z: -0.01 };
 
-    const bg = <plane id="palette-background"
-      scale={{ x: 2.2, y: 1, z: 0.1 }}
-      color="#666666" />;
+    const bg = (
+      <plane
+        id="palette-background"
+        scale={{ x: 2.2, y: 1, z: 0.1 }}
+        color="#666666"
+      />
+    );
 
     let rowY = 0;
 
     const paletteColors = paletteColorList.map(function(color, index) {
       // in the id it uses the same color but without the pound sign
       const id = `${palettePixelPrefix}-${paletteColorListNoPound[index]}`;
-      const x = ((((index) % 12) + 1) / 6) - 1.08;
+      const x = ((index % 12) + 1) / 6 - 1.08;
       if (index % 12 === 0) {
         rowY -= 0.17;
       }
@@ -207,23 +224,39 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
       const position = { x, y, z };
 
       if (color === null) {
-        return <plane id={`${palettePixelPrefix}-transparent`}
-          material="#transparent-material"
-          position={position}
-          scale={paletteScale}
-          transition={paletteColorTransition}
-          onClick={scene.paletteClick.bind(scene)}
-        />;
+        return (
+          <plane
+            id={`${palettePixelPrefix}-transparent`}
+            material="#transparent-material"
+            position={position}
+            scale={paletteScale}
+            transition={paletteColorTransition}
+          />
+        );
       }
 
-      return <plane id={id} position={position} scale={paletteScale} color={color} transition={paletteColorTransition} />
+      return (
+        <plane
+          id={id}
+          position={position}
+          scale={paletteScale}
+          color={color}
+          transition={paletteColorTransition}
+        />
+      );
     });
 
-    const paletteContainer = <entity id="palette-container" position={{ x: 8.5, y: 1, z: 3 }} rotation={{ x: 30, y: 50, z: 0 }}>
-    </entity>;
+    const paletteContainer = (
+      <entity
+        id="palette-container"
+        position={{ x: 8.5, y: 1, z: 3 }}
+        rotation={{ x: 30, y: 50, z: 0 }}
+      />
+    );
 
-
-    paletteContainer.children = paletteContainer.children.concat(bg).concat(paletteColors);
+    paletteContainer.children = paletteContainer.children
+      .concat(bg)
+      .concat(paletteColors);
 
     return paletteContainer;
   }
@@ -238,10 +271,24 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
       const color = wallBlockColors[key];
 
       if (color === undefined || color === null) {
-        return <plane id={id} position={position} scale={wallPixelScale} material="#wall-pixel-blank-material" />;
+        return (
+          <plane
+            id={id}
+            position={position}
+            scale={wallPixelScale}
+            material="#wall-pixel-blank-material"
+          />
+        );
       }
 
-      return <plane id={id} position={position} scale={wallPixelScale} color={color} />;
+      return (
+        <plane
+          id={id}
+          position={position}
+          scale={wallPixelScale}
+          color={color}
+        />
+      );
     });
   }
 
@@ -251,10 +298,10 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     scene.eventSubscriber.on("click", function(evt) {
       const { elementId } = evt.data;
 
-      console.log("elementId", elementId)
+      console.log("elementId", elementId);
 
       if (elementId.startsWith(wallPixelPrefix) === true) {
-        console.log("wall pixel click")
+        console.log("wall pixel click");
         // scene.wallPixelClick(elementId);
       }
 
