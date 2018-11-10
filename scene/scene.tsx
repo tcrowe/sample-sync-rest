@@ -1,9 +1,17 @@
 import * as DCL from "decentraland-api";
 import { Vector3Component } from "decentraland-api";
 
+interface IPixelHashTable {
+  [key: string]: string;
+}
+
+interface IColorVec3HashTable {
+  [key: string]: Vector3Component;
+}
+
 interface IState {
-  paletteColor: string;
-  wallBlockColors: string[];
+  paletteColor?: string;
+  wallBlockColors: IPixelHashTable;
 }
 
 const wallBlocksX: number = 16;
@@ -23,7 +31,7 @@ const wallPixelScale: Vector3Component = {
 
 const palettePixelPrefix = "palette-pixel-";
 const paletteScale = { x: 0.16, y: 0.16, z: 0 };
-const palettePositionX = 0.05;
+// const palettePositionX = 0.05;
 const pound = "#";
 
 /*
@@ -110,16 +118,10 @@ const paletteColorList = [
   "#8b0000",
   "#470000",
   "#2c0000",
-  null
+  ''
 ];
 
-const paletteColorListNoPound = paletteColorList.map(function(color) {
-  if (color === null) {
-    return null;
-  }
-
-  return color.replace(pound, "");
-});
+const paletteColorListNoPound = paletteColorList.map(color => color.replace(pound, ""));
 
 const paletteColorTransition = {
   position: {
@@ -148,15 +150,11 @@ const transparentMaterial = (
   />
 );
 
-const apiUrl = "http://127.0.0.1:7753/api/pixels";
+// const apiUrl = "http://127.0.0.1:7753/api/pixels";
 
-interface IPixelHashTable {
-  [key: string]: string;
-}
-
-const wallPixelPositions: IPixelHashTable = {};
+const wallPixelPositions: IColorVec3HashTable = {};
 const wallPixelColorsInit: IPixelHashTable = {};
-let wallBlockIndex = 0;
+// let wallBlockIndex = 0;
 
 for (let xIndex = 0; xIndex < wallBlocksX; xIndex += 1) {
   for (let yIndex = 0; yIndex < wallBlocksY; yIndex += 1) {
@@ -164,14 +162,14 @@ for (let xIndex = 0; xIndex < wallBlocksX; xIndex += 1) {
     const x = (wallWidth / wallBlocksX) * xIndex + wallOffsetX;
     const y = (wallHeight / wallBlocksY) * yIndex + wallOffsetY;
     wallPixelPositions[key] = { x, y, z: wallPixelZ };
-    wallBlockIndex += 1;
-    wallPixelColorsInit[key] = null;
+    // wallBlockIndex += 1;
+    wallPixelColorsInit[key] = '';
   }
 }
 
 export default class HttpScene extends DCL.ScriptableScene<any, IState> {
   public state: IState = {
-    paletteColor: null,
+    paletteColor: '',
     wallBlockColors: wallPixelColorsInit
   };
 
@@ -196,11 +194,11 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     this.setState({ paletteColor });*/
   }
 
-  private drawPalette(): DCL.ISimplifiedNode[] {
+  private drawPalette(): DCL.ISimplifiedNode {
     const scene = this;
     console.log("scene", scene);
     const { paletteColor } = scene.state;
-    const palettePosition = { x: 0, y: 0, z: -0.01 };
+    // const palettePosition = { x: 0, y: 0, z: -0.01 };
 
     const bg = (
       <plane
@@ -223,7 +221,7 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
       const z = color === paletteColor ? -0.02 : -0.01;
       const position = { x, y, z };
 
-      if (color === null) {
+      if (color === '') {
         return (
           <plane
             id={`${palettePixelPrefix}-transparent`}
@@ -251,26 +249,24 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
         id="palette-container"
         position={{ x: 8.5, y: 1, z: 3 }}
         rotation={{ x: 30, y: 50, z: 0 }}
-      />
+      >
+        {bg}
+        {paletteColors}
+      </entity>
     );
-
-    paletteContainer.children = paletteContainer.children
-      .concat(bg)
-      .concat(paletteColors);
 
     return paletteContainer;
   }
 
   private drawWallPixels(): DCL.ISimplifiedNode[] {
-    const scene = this;
     const { wallBlockColors } = this.state;
 
-    return Object.keys(wallBlockColors).map(function(key) {
+    return Object.keys(wallBlockColors).map(function(key:string) {
       const id = `${wallPixelPrefix}-${key}`;
-      const position = wallPixelPositions[key];
-      const color = wallBlockColors[key];
+      const position:Vector3Component = wallPixelPositions[key];
+      const color:string = wallBlockColors[key];
 
-      if (color === undefined || color === null) {
+      if (color === undefined || color === null || color === '') {
         return (
           <plane
             id={id}
@@ -302,12 +298,12 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
 
       if (elementId.startsWith(wallPixelPrefix) === true) {
         console.log("wall pixel click");
-        // scene.wallPixelClick(elementId);
+        scene.wallPixelClick(elementId);
       }
 
       if (elementId.startsWith(palettePixelPrefix) === true) {
         console.log("palette pixel click");
-        // scene.paletteClick(elementId);
+        scene.paletteClick(elementId);
       }
     });
 
