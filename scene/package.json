@@ -1,0 +1,17 @@
+{
+  "name": "sample-sync-rest-scene",
+  "version": "0.1.0",
+  "description": "REST example Decentraland scene project",
+  "private": true,
+  "author": "Tony Crowe <npm@tonycrowe.com> (https://github.com/tcrowe)",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "decentraland-api": "latest",
+    "decentraland": "latest"
+  },
+  "scripts": {
+    "start": "dcl start --port 7752",
+    "build": "decentraland-compiler build.json",
+    "watch": "decentraland-compiler build.json --watch"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES6",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "allowSyntheticDefaultImports": false,
+    "newLine": "lf",
+    "stripInternal": true,
+    "strict": true,
+    "baseUrl": ".",
+    "removeComments": true,
+    "outDir": ".",
+    "pretty": true,
+    "lib": ["es2017"]
+  },
+  "exclude": ["node_modules"]
+}

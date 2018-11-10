@@ -1,0 +1,5 @@
+.decentraland
+dist
+node_modules
+scene.js
+.DS_Store
