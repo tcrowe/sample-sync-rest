@@ -48,14 +48,17 @@ pixelRouter.get("/", function(req: express.Request, res: express.Response) {
     }
 
     res.status(200).json(pixels);
-  })
+  });
 });
 
 //
 // get one pixel by {x,y}
 // GET /api/pixels/pixel/?x=0&y=0
 //
-pixelRouter.get("/pixel", function(req: express.Request, res: express.Response) {
+pixelRouter.get("/pixel", function(
+  req: express.Request,
+  res: express.Response
+) {
   let { x, y } = req.query;
 
   if (isNaN(x) === true || isNaN(y) === true) {
@@ -66,7 +69,7 @@ pixelRouter.get("/pixel", function(req: express.Request, res: express.Response) 
   x = parseInt(x);
   y = parseInt(y);
 
-  Pixel.findOne({ x, y }, function(err:Error, pixel: Document) {
+  Pixel.findOne({ x, y }, function(err: Error, pixel: Document) {
     if (err !== undefined && err !== null) {
       const msg = `error getting one pixel, x: ${x}, y: ${y}`;
       console.error(msg, err);
@@ -81,7 +84,10 @@ pixelRouter.get("/pixel", function(req: express.Request, res: express.Response) 
 // put a new pixel which does not exist in the db yet
 // PUT /api/pixels/pixel
 //
-pixelRouter.put("/pixel", bodyParser.json(), function(req: express.Request, res: express.Response) {
+pixelRouter.put("/pixel", bodyParser.json(), function(
+  req: express.Request,
+  res: express.Response
+) {
   let { x, y, color } = req.body;
 
   if (isNaN(x) === true || isNaN(y) === true) {
@@ -92,7 +98,7 @@ pixelRouter.put("/pixel", bodyParser.json(), function(req: express.Request, res:
   x = parseInt(x);
   y = parseInt(y);
 
-  if (typeof color !== "string" || (validColorPattern.test(color) === false)) {
+  if (typeof color !== "string" || validColorPattern.test(color) === false) {
     const msg = `the color was not valid hex, color: ${color}`;
     console.error(msg);
     return res.status(400).json({ error: msg });
@@ -111,7 +117,7 @@ pixelRouter.put("/pixel", bodyParser.json(), function(req: express.Request, res:
       return res.status(400).json({ error: msg });
     }
 
-    Pixel.create({x, y, color}, function(err: Error, pixel: Document) {
+    Pixel.create({ x, y, color }, function(err: Error, pixel: Document) {
       if (err !== undefined && err !== null) {
         const msg = `error while creating pixel, x: ${x}, y: ${y}, color: ${color}`;
         console.error(msg, err);
@@ -127,11 +133,14 @@ pixelRouter.put("/pixel", bodyParser.json(), function(req: express.Request, res:
 // post an existing pixel that we already know about by _id
 // POST /api/pixels/pixel/:_id
 //
-pixelRouter.post("/pixel/:_id", bodyParser.json(), function(req: express.Request, res: express.Response) {
+pixelRouter.post("/pixel/:_id", bodyParser.json(), function(
+  req: express.Request,
+  res: express.Response
+) {
   const { _id } = req.params;
   const { color } = req.body;
 
-  if (typeof color !== "string" || (validColorPattern.test(color) === false)) {
+  if (typeof color !== "string" || validColorPattern.test(color) === false) {
     const msg = `the color was not valid hex, color: ${color}`;
     console.error(msg);
     return res.status(400).json({ error: msg });
@@ -150,9 +159,9 @@ pixelRouter.post("/pixel/:_id", bodyParser.json(), function(req: express.Request
       return res.status(400).json({ error: msg });
     }
 
-    pixel.set('color', color);
+    pixel.set("color", color);
 
-    pixel.save(function(err:Error) {
+    pixel.save(function(err: Error) {
       if (err !== undefined && err !== null) {
         const msg = `error while saving one pixel for POST, _id: ${_id}, color: ${color}`;
         console.error(msg, err);
@@ -160,7 +169,7 @@ pixelRouter.post("/pixel/:_id", bodyParser.json(), function(req: express.Request
       }
 
       res.status(200).json(pixel);
-    })
+    });
   });
 });
 
@@ -168,7 +177,10 @@ pixelRouter.post("/pixel/:_id", bodyParser.json(), function(req: express.Request
 // delete an existing pixel that we know of by _id
 // DELETE /api/pixels/pixel/:_id
 //
-pixelRouter.delete("/pixel/:_id", function(req: express.Request, res: express.Response) {
+pixelRouter.delete("/pixel/:_id", function(
+  req: express.Request,
+  res: express.Response
+) {
   const { _id } = req.params;
 
   Pixel.findById(_id, function(err: Error, pixel: Document) {
@@ -178,7 +190,7 @@ pixelRouter.delete("/pixel/:_id", function(req: express.Request, res: express.Re
       return res.status(500).json({ error: msg });
     }
 
-    Pixel.deleteOne({ _id }, function(err:Error) {
+    Pixel.deleteOne({ _id }, function(err: Error) {
       if (err !== undefined && err !== null) {
         const msg = `could not delete by _id to DELETE, _id: ${_id}`;
         console.error(msg, err);
@@ -186,8 +198,8 @@ pixelRouter.delete("/pixel/:_id", function(req: express.Request, res: express.Re
       }
 
       res.status(200).json({ deleted: true });
-    })
-  })
+    });
+  });
 });
 
 //
@@ -204,4 +216,7 @@ console.log(`listening http://${host}:${port}`);
 //
 // connect to mongodb server
 //
-mongoose.connect("mongodb://127.0.0.1:27017/sample-sync-rest", { useNewUrlParser: true });
+mongoose.connect(
+  "mongodb://127.0.0.1:27017/sample-sync-rest",
+  { useNewUrlParser: true }
+);

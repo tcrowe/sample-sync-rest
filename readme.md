@@ -12,6 +12,19 @@ It's a [Decentraland](https://decentraland.org) scene to demonstrate how to inco
 [Docs](./docs)
 + [The Build System](./docs/build-system.md)
 
+## REST functions
+
++ GET /api/pixels
+  * get all pixels
++ GET /api/pixels/pixel/?x=6&y=4
+  * get a single pixel at {x,y} coordinate from db
++ PUT /api/pixels/pixel
+  * put a new pixel into the db
++ POST /api/pixels/pixel/:id
+  * post an existing pixel back into the db
++ DELETE /api/pixels/pixel/:id
+  * delete existing pixel
+
 ## Install
 
 ```sh
