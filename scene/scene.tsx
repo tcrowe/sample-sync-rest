@@ -10,29 +10,37 @@ interface IColorVec3HashTable {
 }
 
 interface IState {
-  paletteColor?: string;
+  paletteColor: string;
   wallBlockColors: IPixelHashTable;
 }
 
-const wallBlocksX: number = 16;
-const wallBlocksY: number = 8;
-const wallWidth = 9;
-const wallHeight = 4.5;
+interface IDBPixel {
+  _id: string;
+  x: number;
+  y: number;
+  color: string;
+}
+
+const wallBlocksX: number = 21;
+const wallBlocksY: number = 6;
+const wallWidth = 7;
+const wallHeight = 2;
 const wallOffsetX = 0.75;
-const wallOffsetY = 0.5;
+const wallOffsetY = 1;
 const wallPixelPrefix = "wall-pixel-";
 const wallPixelZ = 5;
 
 const wallPixelScale: Vector3Component = {
   x: wallWidth / wallBlocksX - 0.01,
   y: wallHeight / wallBlocksY - 0.01,
-  z: 0.05
+  z: 0.01
 };
 
-const palettePixelPrefix = "palette-pixel-";
-const paletteScale = { x: 0.16, y: 0.16, z: 0 };
-// const palettePositionX = 0.05;
-const pound = "#";
+const swatchPrefix = "swatch-";
+
+// z = 0.1 or else clicks would not fire
+const swatchScale = { x: 0.16, y: 0.16, z: 0.1 };
+const swatchSelectedScale = { x: 0.18, y: 0.18, z: 0.1 };
 
 /*
 
@@ -44,7 +52,7 @@ https://www.patternfly.org/styles/color-palette/
 + some are commented to get the entity count down
 
 */
-const paletteColorList = [
+const swatchColors = [
   "#fbdebf",
   "#f7bd7f",
   "#f39d3c",
@@ -118,22 +126,37 @@ const paletteColorList = [
   "#8b0000",
   "#470000",
   "#2c0000",
-  ''
+  "transparent"
 ];
 
-const paletteColorListNoPound = paletteColorList.map(color => color.replace(pound, ""));
-
-const paletteColorTransition = {
+const swatchTransition = {
   position: {
+    duration: 300
+  },
+  scale: {
+    duration: 300
+  },
+  color: {
     duration: 300
   }
 };
 
 const blankColor = "#0099CC";
 
-const wallPixelBlankMaterial = (
+const wallPixelColorMaterial = (
   <material
-    id="wall-pixel-blank-material"
+    id="wall-pixel-color-material"
+    alpha={1}
+    ambientColor="#FFFFFF"
+    albedoColor="#FFFFFF"
+    reflectivityColor="#FFFFFF"
+    hasAlpha={false}
+  />
+)
+
+const wallPixelTransparentMaterial = (
+  <material
+    id="wall-pixel-transparent-material"
     alpha={0.1}
     ambientColor={blankColor}
     albedoColor={blankColor}
@@ -150,11 +173,15 @@ const transparentMaterial = (
   />
 );
 
-// const apiUrl = "http://127.0.0.1:7753/api/pixels";
+const apiUrl = "http://127.0.0.1:7753/api/pixels";
+
+const headers = {
+  Accept: "application/json",
+  "Content-Type": "application/json"
+};
 
 const wallPixelPositions: IColorVec3HashTable = {};
 const wallPixelColorsInit: IPixelHashTable = {};
-// let wallBlockIndex = 0;
 
 for (let xIndex = 0; xIndex < wallBlocksX; xIndex += 1) {
   for (let yIndex = 0; yIndex < wallBlocksY; yIndex += 1) {
@@ -162,73 +189,102 @@ for (let xIndex = 0; xIndex < wallBlocksX; xIndex += 1) {
     const x = (wallWidth / wallBlocksX) * xIndex + wallOffsetX;
     const y = (wallHeight / wallBlocksY) * yIndex + wallOffsetY;
     wallPixelPositions[key] = { x, y, z: wallPixelZ };
-    // wallBlockIndex += 1;
-    wallPixelColorsInit[key] = '';
+    wallPixelColorsInit[key] = "transparent";
   }
 }
 
 export default class HttpScene extends DCL.ScriptableScene<any, IState> {
   public state: IState = {
-    paletteColor: '',
+    paletteColor: "transparent",
     wallBlockColors: wallPixelColorsInit
   };
 
-  private wallPixelClick(evt: any): void {
-    console.log("wallPixelClick", evt);
-    /*const { paletteColor, wallBlockColors } = this.state;
+  private wallPixelClick(elementId: string): void {
+    const scene = this;
+    const { paletteColor, wallBlockColors } = scene.state;
+    const color = paletteColor;
     const [x, y] = elementId.replace(wallPixelPrefix, "").split("-");
     const key = `${x}-${y}`;
+    let url = `${apiUrl}/pixel/?x=${x}&y=${y}`
 
-    fetch(`${apiUrl}/pixel/?x=${x}&y=${y}`)
+    fetch(url)
       .then(res => res.json())
       .then(function(res) {
-        console.log("res", res)
+        if (res.error !== undefined) {
+          return console.error(url, res.error);
+        }
+
+        const keys = Object.keys(res);
+        let method = "POST";
+        let body = "";
+
+        if (keys.length === 0) {
+          // PUT
+          method = "PUT";
+          url = `${apiUrl}/pixel`;
+        }
+
+        if (res._id !== undefined) {
+          // POST to the _id
+          url = `${apiUrl}/pixel/${res._id}`;
+        }
+
+        body = JSON.stringify({x, y, color});
+
+        fetch(url, {method, body, headers})
+          .then(res => res.json())
+          .then(function(res) {
+            if (res.error !== undefined) {
+                return console.error(res.error);
+            }
+
+            wallBlockColors[key] = color;
+            scene.setState({ wallBlockColors });
+          })
+          .catch(err => console.error("error putting single pixel", err));
       })
-      .catch(err => console.error("error getting single pixel", err));*/
+      .catch(err => console.error("error getting single pixel", err));
   }
 
-  private paletteClick(evt: any): void {
-    console.log("paletteClick", evt);
-    /*const paletteColor = "#" + elementId.split("-")[1];
-    console.log("paletteColor", paletteColor)
-    this.setState({ paletteColor });*/
+  private swatchClick(elementId: string): void {
+    let paletteColor = elementId.replace(swatchPrefix, "");
+    this.setState({ paletteColor });
   }
 
   private drawPalette(): DCL.ISimplifiedNode {
-    const scene = this;
-    console.log("scene", scene);
-    const { paletteColor } = scene.state;
-    // const palettePosition = { x: 0, y: 0, z: -0.01 };
+    const { paletteColor } = this.state;
 
     const bg = (
       <plane
         id="palette-background"
-        scale={{ x: 2.2, y: 1, z: 0.1 }}
+        scale={{ x: 2.2, y: 1, z: 0 }}
+        position={{ x: 0, y: 0, z: 0 }}
         color="#666666"
       />
     );
 
     let rowY = 0;
 
-    const paletteColors = paletteColorList.map(function(color, index) {
-      // in the id it uses the same color but without the pound sign
-      const id = `${palettePixelPrefix}-${paletteColorListNoPound[index]}`;
+    const swatches = swatchColors.map(function(color, index) {
+      const id = `${swatchPrefix}${color}`;
       const x = ((index % 12) + 1) / 6 - 1.08;
       if (index % 12 === 0) {
         rowY -= 0.17;
       }
       const y = rowY + 0.5;
-      const z = color === paletteColor ? -0.02 : -0.01;
+      const selected = color === paletteColor;
+      const z = selected ? -0.03 : -0.01;
       const position = { x, y, z };
+      const scale = selected ? swatchSelectedScale : swatchScale;
 
-      if (color === '') {
+      if (color === "transparent") {
         return (
           <plane
-            id={`${palettePixelPrefix}-transparent`}
+            id={`${swatchPrefix}transparent`}
             material="#transparent-material"
             position={position}
-            scale={paletteScale}
-            transition={paletteColorTransition}
+            scale={scale}
+            transition={swatchTransition}
           />
         );
       }
@@ -237,9 +293,9 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
         <plane
           id={id}
           position={position}
-          scale={paletteScale}
+          scale={scale}
           color={color}
-          transition={paletteColorTransition}
+          transition={swatchTransition}
         />
       );
     });
@@ -251,7 +307,7 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
         rotation={{ x: 30, y: 50, z: 0 }}
       >
         {bg}
-        {paletteColors}
+        {swatches}
       </entity>
     );
 
@@ -261,18 +317,19 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
   private drawWallPixels(): DCL.ISimplifiedNode[] {
     const { wallBlockColors } = this.state;
 
-    return Object.keys(wallBlockColors).map(function(key:string) {
-      const id = `${wallPixelPrefix}-${key}`;
-      const position:Vector3Component = wallPixelPositions[key];
-      const color:string = wallBlockColors[key];
+    return Object.keys(wallBlockColors).map(function(key: string) {
+      const id = `${wallPixelPrefix}${key}`;
+      const position: Vector3Component = wallPixelPositions[key];
+      const color: string = wallBlockColors[key];
 
-      if (color === undefined || color === null || color === '') {
+      if (color === undefined || color === null || color === "transparent" || color === "") {
         return (
           <plane
             id={id}
             position={position}
             scale={wallPixelScale}
-            material="#wall-pixel-blank-material"
+            material="#wall-pixel-transparent-material"
+            color="transparent"
           />
         );
       }
@@ -282,6 +339,7 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
           id={id}
           position={position}
           scale={wallPixelScale}
+          material="#wall-pixel-color-material"
           color={color}
         />
       );
@@ -291,34 +349,39 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
   public sceneDidMount(): void {
     const scene = this;
 
-    scene.eventSubscriber.on("click", function(evt) {
+    scene.eventSubscriber.on("click", function(evt: any) {
       const { elementId } = evt.data;
 
-      console.log("elementId", elementId);
-
       if (elementId.startsWith(wallPixelPrefix) === true) {
-        console.log("wall pixel click");
         scene.wallPixelClick(elementId);
       }
 
-      if (elementId.startsWith(palettePixelPrefix) === true) {
-        console.log("palette pixel click");
-        scene.paletteClick(elementId);
+      if (elementId.startsWith(swatchPrefix) === true) {
+        scene.swatchClick(elementId);
       }
     });
 
-    /*fetch(apiUrl)
+    fetch(apiUrl)
       .then(res => res.json())
       .then(function(res) {
-        console.log("res", res);
+        const {wallBlockColors} = scene.state;
+
+        res.forEach(function(pixel: IDBPixel) {
+          const { x, y, color} = pixel;
+          const key = `${x}-${y}`;
+          wallBlockColors[key] = color;
+        });
+
+        scene.setState({ wallBlockColors });
       })
-      .catch(err => console.error("error getting all pixels", err));*/
+      .catch(err => console.error("error getting all pixels", err));
   }
 
   public async render() {
     return (
       <scene id="sample-sync-rest">
-        {wallPixelBlankMaterial}
+        {wallPixelTransparentMaterial}
+        {wallPixelColorMaterial}
         {transparentMaterial}
         {this.drawPalette()}
         {this.drawWallPixels()}

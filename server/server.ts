@@ -3,10 +3,7 @@ import * as cors from "cors";
 import * as mongoose from "mongoose";
 import { Schema, Document } from "mongoose";
 import * as bodyParser from "body-parser";
-const isNumber = require('lodash/isNumber');
-const isFinite = require('lodash/isFinite');
-const isString = require('lodash/isString');
-const validHexPattern = /^#[0-9A-F]{3,6}$/;
+const validColorPattern = /^(#[0-9A-F]{3,6}|transparent)$/i;
 
 //
 // express app config
@@ -31,8 +28,8 @@ const pixelSchema = new Schema({
     required: true
   },
   color: {
-    type: String,
-    required: true
+    // blank or null means transparent
+    type: String
   }
 });
 
@@ -59,12 +56,15 @@ pixelRouter.get("/", function(req: express.Request, res: express.Response) {
 // GET /api/pixels/pixel/?x=0&y=0
 //
 pixelRouter.get("/pixel", function(req: express.Request, res: express.Response) {
-  const { x, y } = req.query;
+  let { x, y } = req.query;
 
-  if (isNumber(x) === false || isFinite(x) === false || isNumber(y) === false || isFinite(y) === false) {
-    const msg = "invalid x or y querystring parameter";
+  if (isNaN(x) === true || isNaN(y) === true) {
+    const msg = `x or y were not a number, x: ${x}, y: ${y}`;
     return res.status(400).json({ error: msg });
   }
+
+  x = parseInt(x);
+  y = parseInt(y);
 
   Pixel.findOne({ x, y }, function(err:Error, pixel: Document) {
     if (err !== undefined && err !== null) {
@@ -73,7 +73,7 @@ pixelRouter.get("/pixel", function(req: express.Request, res: express.Response) 
       return res.status(500).json({ error: msg });
     }
 
-    res.status(200).json(pixel);
+    res.status(200).json(pixel || {});
   });
 });
 
@@ -81,16 +81,18 @@ pixelRouter.get("/pixel", function(req: express.Request, res: express.Response) 
 // put a new pixel which does not exist in the db yet
 // PUT /api/pixels/pixel
 //
-pixelRouter.put("/pixel", bodyParser.urlencoded({ extended: false }), function(req: express.Request, res: express.Response) {
-  const { x, y, color } = req.body;
+pixelRouter.put("/pixel", bodyParser.json(), function(req: express.Request, res: express.Response) {
+  let { x, y, color } = req.body;
 
-  if (isNumber(x) === false || isFinite(x) === false || isNumber(y) === false || isFinite(y) === false) {
-    const msg = `invalid x or y put body in PUT, x: ${x}, y: ${y}`;
-    console.error(msg);
+  if (isNaN(x) === true || isNaN(y) === true) {
+    const msg = `x or y were not a number, x: ${x}, y: ${y}`;
     return res.status(400).json({ error: msg });
   }
 
-  if (isString(color) === false || validHexPattern.test(color) === false) {
+  x = parseInt(x);
+  y = parseInt(y);
+
+  if (typeof color !== "string" || (validColorPattern.test(color) === false)) {
     const msg = `the color was not valid hex, color: ${color}`;
     console.error(msg);
     return res.status(400).json({ error: msg });
@@ -122,28 +124,28 @@ pixelRouter.put("/pixel", bodyParser.urlencoded({ extended: false }), function(r
 });
 
 //
-// post an existing pixel that we already know about by id
-// POST /api/pixels/pixel/:id
+// post an existing pixel that we already know about by _id
+// POST /api/pixels/pixel/:_id
 //
-pixelRouter.post("/pixel/:id", bodyParser.urlencoded({ extended: false }), function(req: express.Request, res: express.Response) {
-  const { id } = req.params;
+pixelRouter.post("/pixel/:_id", bodyParser.json(), function(req: express.Request, res: express.Response) {
+  const { _id } = req.params;
   const { color } = req.body;
 
-  if (isString(color) === false || validHexPattern.test(color) === false) {
+  if (typeof color !== "string" || (validColorPattern.test(color) === false)) {
     const msg = `the color was not valid hex, color: ${color}`;
     console.error(msg);
     return res.status(400).json({ error: msg });
   }
 
-  Pixel.findOne({ id }, function(err: Error, pixel: Document) {
+  Pixel.findOne({ _id }, function(err: Error, pixel: Document) {
     if (err !== undefined && err !== null) {
-      const msg = `error while getting one pixel for POST, id: ${id}, color: ${color}`;
+      const msg = `error while getting one pixel for POST, _id: ${_id}, color: ${color}`;
       console.error(msg, err);
       return res.status(500).json({ error: msg });
     }
 
     if (pixel === null) {
-      const msg = `cannot POST to a non-existent pixel id, id: ${id}, color: ${color}`;
+      const msg = `cannot POST to a non-existent pixel _id, _id: ${_id}, color: ${color}`;
       console.error(msg);
       return res.status(400).json({ error: msg });
     }
@@ -152,33 +154,33 @@ pixelRouter.post("/pixel/:id", bodyParser.urlencoded({ extended: false }), funct
 
     pixel.save(function(err:Error) {
       if (err !== undefined && err !== null) {
-        const msg = `error while saving one pixel for POST, id: ${id}, color: ${color}`;
+        const msg = `error while saving one pixel for POST, _id: ${_id}, color: ${color}`;
         console.error(msg, err);
         return res.status(500).json({ error: msg });
       }
 
-      res.status(200).json(res);
+      res.status(200).json(pixel);
     })
   });
 });
 
 //
-// delete an existing pixel that we know of by id
-// DELETE /api/pixels/pixel/:id
+// delete an existing pixel that we know of by _id
+// DELETE /api/pixels/pixel/:_id
 //
-pixelRouter.delete("/pixel/:id", function(req: express.Request, res: express.Response) {
-  const { id } = req.params;
+pixelRouter.delete("/pixel/:_id", function(req: express.Request, res: express.Response) {
+  const { _id } = req.params;
 
-  Pixel.findById(id, function(err: Error, pixel: Document) {
+  Pixel.findById(_id, function(err: Error, pixel: Document) {
     if (err !== undefined && err !== null) {
-      const msg = `could not find document by id to DELETE, id: ${id}`;
+      const msg = `could not find document by _id to DELETE, _id: ${_id}`;
       console.error(msg, err);
       return res.status(500).json({ error: msg });
     }
 
-    Pixel.deleteOne({ id }, function(err:Error) {
+    Pixel.deleteOne({ _id }, function(err:Error) {
       if (err !== undefined && err !== null) {
-        const msg = `could not delete by id to DELETE, id: ${id}`;
+        const msg = `could not delete by _id to DELETE, _id: ${_id}`;
         console.error(msg, err);
         return res.status(500).json({ error: msg });
       }
@@ -198,3 +200,8 @@ expressApp.use("/api/pixels", pixelRouter);
 //
 expressApp.listen(port, host);
 console.log(`listening http://${host}:${port}`);
+
+//
+// connect to mongodb server
+//
+mongoose.connect("mongodb://127.0.0.1:27017/sample-sync-rest", { useNewUrlParser: true });

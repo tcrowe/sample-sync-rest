@@ -3,6 +3,12 @@
 
 It's a [Decentraland](https://decentraland.org) scene to demonstrate how to incorporate an HTTP-REST API.
 
+![blank](./img/blank-canvas.png)
+
+![shapes](./img/shapes.png)
+
+![success](./img/success.png)
+
 [Docs](./docs)
 + [The Build System](./docs/build-system.md)
 
