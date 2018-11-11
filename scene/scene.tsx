@@ -135,9 +135,6 @@ const swatchTransition = {
   },
   scale: {
     duration: 300
-  },
-  color: {
-    duration: 300
   }
 };
 
@@ -152,7 +149,7 @@ const wallPixelColorMaterial = (
     reflectivityColor="#FFFFFF"
     hasAlpha={false}
   />
-)
+);
 
 const wallPixelTransparentMaterial = (
   <material
@@ -205,7 +202,7 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     const color = paletteColor;
     const [x, y] = elementId.replace(wallPixelPrefix, "").split("-");
     const key = `${x}-${y}`;
-    let url = `${apiUrl}/pixel/?x=${x}&y=${y}`
+    let url = `${apiUrl}/pixel/?x=${x}&y=${y}`;
 
     fetch(url)
       .then(res => res.json())
@@ -229,13 +226,13 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
           url = `${apiUrl}/pixel/${res._id}`;
         }
 
-        body = JSON.stringify({x, y, color});
+        body = JSON.stringify({ x, y, color });
 
-        fetch(url, {method, body, headers})
+        fetch(url, { method, body, headers })
           .then(res => res.json())
           .then(function(res) {
             if (res.error !== undefined) {
-                return console.error(res.error);
+              return console.error(res.error);
             }
 
             wallBlockColors[key] = color;
@@ -322,7 +319,12 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
       const position: Vector3Component = wallPixelPositions[key];
       const color: string = wallBlockColors[key];
 
-      if (color === undefined || color === null || color === "transparent" || color === "") {
+      if (
+        color === undefined ||
+        color === null ||
+        color === "transparent" ||
+        color === ""
+      ) {
         return (
           <plane
             id={id}
@@ -364,10 +366,10 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     fetch(apiUrl)
       .then(res => res.json())
       .then(function(res) {
-        const {wallBlockColors} = scene.state;
+        const { wallBlockColors } = scene.state;
 
         res.forEach(function(pixel: IDBPixel) {
-          const { x, y, color} = pixel;
+          const { x, y, color } = pixel;
           const key = `${x}-${y}`;
           wallBlockColors[key] = color;
         });
