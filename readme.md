@@ -27,6 +27,8 @@ It's a [Decentraland](https://decentraland.org) scene to demonstrate how to inco
 
 ## Install
 
+It uses MongoDB so please [Install MongoDB](https://docs.mongodb.com/manual/installation/) before continuing.
+
 ```sh
 # clone to your machine
 git clone https://github.com/tcrowe/sample-sync-rest.git
@@ -36,6 +38,7 @@ cd sample-sync-rest
 ## Run the scene preview
 
 ```sh
+# from the project root
 cd scene
 
 # install node dependencies
@@ -50,6 +53,7 @@ npm start
 (In another terminal window)
 
 ```sh
+# from the project root
 cd server
 
 # install node dependencies
@@ -58,7 +62,24 @@ npm install
 # start the server
 npm start
 ```
-## Contribute
+## Database
+
+Running the server and clicking around in the scene should automatically create the database.
+
+You can confirm what is in the database by running:
+
+```sh
+mongodb
+
+use sample-sync-rest
+# switched to db sample-sync-rest
+
+# list all pixels
+db.pixels.find()
+
+# ⚠️ delete all pixels
+db.pixels.remove({})
+```
 
 ## Contribute
 
