@@ -34,17 +34,17 @@ If successful the preview will show up.
 [Install MongoDB](https://docs.mongodb.com/manual/installation/) for the database server. After that we can drop in some supporting modules for the server.
 
 ```sh
-# into the server directory
+# Create the server directory and enter into it
 mkdir server
 cd server
 
-# new node project
+# Create the node project
 npm init
 
-# server placeholder
+# Start with a server placeholder
 touch server.ts
 
-# dependencies installed
+# Install node dependencies
 npm install @types/body-parser @types/cors @types/express @types/lodash @types/mongoose body-parser cors express lodash mongoose nodemon ts-node typescript
 ```
 
@@ -58,3 +58,10 @@ In our `./package.json` `scripts` object we should specify that we want to run t
   }
 }
 ```
+
+For the example we changed the scene port to `7752` and the server to `7753`.
+
+---
+
+[Next: The Mongoose Pixel Model](./mongoose-pixel-model.md)
+[Back to Docs](./readme.md)

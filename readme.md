@@ -11,6 +11,8 @@ It's a [Decentraland](https://decentraland.org) scene to demonstrate how to inco
 
 [Docs](./docs)
 + [The Build System](./docs/build-system.md)
++ [The Mongoose Pixel Model](./docs/mongoose-pixel-model.md)
++ [Synchronize the REST State](./docs/rest-state.md)
 
 ## REST functions
 

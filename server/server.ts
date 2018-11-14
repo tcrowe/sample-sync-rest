@@ -3,7 +3,7 @@ import * as cors from "cors";
 import * as mongoose from "mongoose";
 import { Schema, Document } from "mongoose";
 import * as bodyParser from "body-parser";
-const validColorPattern = /^(#[0-9A-F]{3,6}|transparent)$/i;
+const validColorPattern = /^#[0-9A-F]{3,6}$/i;
 
 //
 // express app config

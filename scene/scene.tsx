@@ -203,6 +203,8 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     const [x, y] = elementId.replace(wallPixelPrefix, "").split("-");
     const key = `${x}-${y}`;
     let url = `${apiUrl}/pixel/?x=${x}&y=${y}`;
+    let method = "POST";
+    let body = "";
 
     fetch(url)
       .then(res => res.json())
@@ -212,8 +214,6 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
         }
 
         const keys = Object.keys(res);
-        let method = "POST";
-        let body = "";
 
         if (keys.length === 0) {
           // PUT
@@ -222,11 +222,17 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
         }
 
         if (res._id !== undefined) {
-          // POST to the _id
+          // POST or DELETE to the _id
           url = `${apiUrl}/pixel/${res._id}`;
         }
-
-        body = JSON.stringify({ x, y, color });
+        
+        if (color === "transparent") {
+          method = "DELETE";
+        }
+        
+        if (method === "PUT" || method === "POST") {
+          body = JSON.stringify({ x, y, color });
+        }
 
         fetch(url, { method, body, headers })
           .then(res => res.json())
