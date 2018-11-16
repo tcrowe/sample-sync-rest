@@ -225,11 +225,11 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
           // POST or DELETE to the _id
           url = `${apiUrl}/pixel/${res._id}`;
         }
-        
+
         if (color === "transparent") {
           method = "DELETE";
         }
-        
+
         if (method === "PUT" || method === "POST") {
           body = JSON.stringify({ x, y, color });
         }
@@ -354,9 +354,44 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     });
   }
 
+  private synchronizeWall(): void {
+    const scene = this;
+
+    // GET /api/pixels
+    fetch(apiUrl)
+      .then(res => res.json())
+      .then(function(res) {
+        const { wallBlockColors } = scene.state;
+
+        Object.keys(wallBlockColors).forEach(function(blockKey) {
+          const isColorSet = res.some((pixel: IDBPixel) => {
+            const { x, y, color } = pixel;
+            const pixelKey = `${x}-${y}`;
+
+            if (pixelKey === blockKey) {
+              wallBlockColors[blockKey] = color;
+              return true;
+            }
+
+            return false;
+          });
+
+          if (isColorSet === false) {
+            wallBlockColors[blockKey] = "transparent";
+          }
+        });
+
+        scene.setState({ wallBlockColors });
+      })
+      .catch(err => console.error("error getting all pixels", err));
+  }
+
   public sceneDidMount(): void {
     const scene = this;
 
+    //
+    // hook up click event for wall and palette planes
+    //
     scene.eventSubscriber.on("click", function(evt: any) {
       const { elementId } = evt.data;
 
@@ -369,20 +404,12 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
       }
     });
 
-    fetch(apiUrl)
-      .then(res => res.json())
-      .then(function(res) {
-        const { wallBlockColors } = scene.state;
-
-        res.forEach(function(pixel: IDBPixel) {
-          const { x, y, color } = pixel;
-          const key = `${x}-${y}`;
-          wallBlockColors[key] = color;
-        });
-
-        scene.setState({ wallBlockColors });
-      })
-      .catch(err => console.error("error getting all pixels", err));
+    //
+    // synchronize the wall from the db
+    // keep synchronizing each second
+    //
+    scene.synchronizeWall();
+    setInterval(() => scene.synchronizeWall(), 1000);
   }
 
   public async render() {
