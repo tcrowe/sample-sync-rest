@@ -1,19 +1,44 @@
 import * as DCL from "decentraland-api";
 import { Vector3Component } from "decentraland-api";
 
+/*
+
+IPixelHashTable is used like this:
+
+table["one"] = "two";
+
+*/
 interface IPixelHashTable {
   [key: string]: string;
 }
 
+/*
+
+IColorVec3HashTable is used for Vec3:
+table["one"] = {x: 0, y: 0, z: 0};
+
+*/
 interface IColorVec3HashTable {
   [key: string]: Vector3Component;
 }
 
+/*
+The scene state is very simple:
++ which color is selected on the palette
++ the wall block colors hash table
+*/
 interface IState {
   paletteColor: string;
   wallBlockColors: IPixelHashTable;
 }
 
+/*
+
+IDBPixel represents what is stored in the database
+
+See ../server/server.ts#pixelSchema
+
+*/
 interface IDBPixel {
   _id: string;
   x: number;
@@ -50,6 +75,7 @@ Source:
 https://www.patternfly.org/styles/color-palette/
 
 + some are commented to get the entity count down
++ more wall pixels could be added if the palette is truncated
 
 */
 const swatchColors = [
@@ -129,6 +155,11 @@ const swatchColors = [
   "transparent"
 ];
 
+/*
+
+The palette swatches grow a little when clicked and shrin when deactivated.
+
+*/
 const swatchTransition = {
   position: {
     duration: 300
@@ -138,7 +169,13 @@ const swatchTransition = {
   }
 };
 
-const blankColor = "#0099CC";
+/*
+
+There are two materials used for the wall:
++ wallPixelColorMaterial - opaque material which is the background for colors
++ wallPixelTransparentMaterial - transparent material used for no color
+
+*/
 
 const wallPixelColorMaterial = (
   <material
@@ -150,6 +187,8 @@ const wallPixelColorMaterial = (
     hasAlpha={false}
   />
 );
+
+const blankColor = "#0099CC";
 
 const wallPixelTransparentMaterial = (
   <material
@@ -163,6 +202,12 @@ const wallPixelTransparentMaterial = (
   />
 );
 
+/*
+
+An [x] icon shows on the palette. This is that texture material.
+
+*/
+
 const transparentMaterial = (
   <basic-material
     id="transparent-material"
@@ -172,6 +217,10 @@ const transparentMaterial = (
 
 const apiUrl = "http://127.0.0.1:7753/api/pixels";
 
+/*
+The fetch function always sends and receives JSON. This is for reuse for all
+requests.
+*/
 const headers = {
   Accept: "application/json",
   "Content-Type": "application/json"
@@ -180,6 +229,12 @@ const headers = {
 const wallPixelPositions: IColorVec3HashTable = {};
 const wallPixelColorsInit: IPixelHashTable = {};
 
+
+/*
+
+Generate all the default block and color state before loading from the server.
+
+*/
 for (let xIndex = 0; xIndex < wallBlocksX; xIndex += 1) {
   for (let yIndex = 0; yIndex < wallBlocksY; yIndex += 1) {
     const key = `${xIndex}-${yIndex}`;
@@ -196,6 +251,9 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     wallBlockColors: wallPixelColorsInit
   };
 
+  /**
+   * Triggered when the user clicks a wall block/pixel.
+   */
   private wallPixelClick(elementId: string): void {
     const scene = this;
     const { paletteColor, wallBlockColors } = scene.state;
@@ -249,11 +307,17 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
       .catch(err => console.error("error getting single pixel", err));
   }
 
+  /**
+   * Triggered when a user clicks a color palette swatch.
+   */
   private swatchClick(elementId: string): void {
     let paletteColor = elementId.replace(swatchPrefix, "");
     this.setState({ paletteColor });
   }
 
+  /**
+   * Draw the color palette background and swatches.
+   */
   private drawPalette(): DCL.ISimplifiedNode {
     const { paletteColor } = this.state;
 
@@ -268,6 +332,12 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
 
     let rowY = 0;
 
+    /*
+    
+    Loop through all the colors in `swatchColors` array creating a button
+    for each.
+    
+    */
     const swatches = swatchColors.map(function(color, index) {
       const id = `${swatchPrefix}${color}`;
       const x = ((index % 12) + 1) / 6 - 1.08;
@@ -303,6 +373,10 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
       );
     });
 
+    /*
+    The container allows us to rotate all of the elements inside facing
+    it in a convenient place for the user.
+    */
     const paletteContainer = (
       <entity
         id="palette-container"
@@ -317,6 +391,9 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     return paletteContainer;
   }
 
+  /**
+   * Draw all the wall pixels in color or as a transparent box.
+   */
   private drawWallPixels(): DCL.ISimplifiedNode[] {
     const { wallBlockColors } = this.state;
 
@@ -331,6 +408,7 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
         color === "transparent" ||
         color === ""
       ) {
+        // Transparent (glass) box
         return (
           <plane
             id={id}
@@ -342,6 +420,7 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
         );
       }
 
+      // Color box
       return (
         <plane
           id={id}
@@ -354,6 +433,11 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     });
   }
 
+  /**
+   * Get all the pixel colors from the server and merge it into the state.
+   *
+   * It's used to poll the server each second with `setInterval`
+   */
   private synchronizeWall(): void {
     const scene = this;
 
@@ -412,6 +496,10 @@ export default class HttpScene extends DCL.ScriptableScene<any, IState> {
     setInterval(() => scene.synchronizeWall(), 1000);
   }
 
+  /**
+   * The materials are loaded from the top then `drawPalette` and
+   * `drawWallPixels` are called to draw the boxes for those elements.
+   */
   public async render() {
     return (
       <scene id="sample-sync-rest">
