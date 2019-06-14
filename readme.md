@@ -1,4 +1,6 @@
 
+⚠️ The API for Decentraland changed so this will not work as-is. Maybe we can upgrade it soon. New API and info is at -> https://decentraland.org/
+
 # sample-sync-rest
 
 It's a [Decentraland](https://decentraland.org) scene to demonstrate how to incorporate an HTTP-REST API.
